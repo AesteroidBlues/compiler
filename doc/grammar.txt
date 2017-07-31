@@ -12,6 +12,7 @@ digit = "0" | digit_excluding_zero;
 natural_number = digit_excluding_zero, { digit };
 number = "0" | [ "-" ], natural_number, [ ".", digit, { digit } ] | [ "-" ], "0", ".", digit, { digit };
 
+atom = "@", ident;
 bool = "true" | "false";
 
 constant = terminal | number | bool | list | map;
@@ -30,11 +31,12 @@ block = "{", { statement }, "}";
 while_loop = "while", "(", expression, ")", statement;
 for_loop = "for", "(", expression, ";", expression, ";", expression, ")", statement;
 if = "if", "(", expression, ")", statement, { "elif", "(", expression, ")", statement }, [ "else", statement ];
+var_decl = "var", ident, "=", expression;
 return = "return", [ expression ], ";";
 
 parens = "(", expression, ")";
 
-ex_term = ident | constant | parens;
+ex_term = ident | constant | parens | atom;
 ex_postfix = ex_term, { ( index | call | "++" | "--" ) } | ex_term;
 ex_prefix = ( "!" | "++" | "--" | "-" ), ex_prefix | ex7;
 ex_mul = ex_prefix, ( "*" | "/" | "%" ), ex_mul | ex_prefix;
@@ -44,9 +46,9 @@ ex_concat = ex_compare, "#", ex_concat | ex_compare;
 ex_equals = ex_concat, ( "==" | "!=" ), ex_equals | ex_concat;
 ex_and = ex_equals, "&&", ex_and | ex_equals;
 ex_or = ex_and, "||", ex_or | ex_and;
-expression = ex_or, ( "=" | "*=" | "/=" | "+=" | "-=" | "%=" | "#=" ), expression | ex_or;
+expression = ex_or, ( "*=" | "/=" | "+=" | "-=" | "%=" | "#=" ), expression | ex_or;
 
-statement = [ expression ], ";" | block | while_loop | for_loop | if | return;
+statement = [ expression ], ";" | var_decl | block | while_loop | for_loop | if | return;
 
-func = "func", ident, "(", [ ident, { ",", ident } ], ")", block;
+func = "function", ident, "(", [ ident, { ",", ident } ], ")", block;
 program = { func };
