@@ -17,6 +17,22 @@ std::unordered_map<std::string, TokenType> keywordMap =
 {
     { "function", TokenType::K_FUNCTION },
     { "var", TokenType::K_VAR },
+    { "for", TokenType::K_FOR },
+    { "return", TokenType::K_RETURN },
+};
+
+std::unordered_map<std::string, TokenType> operatorMap =
+{
+    { "+", TokenType::OP_ADD },
+    { "-", TokenType::OP_SUBTRACT },
+    { "*", TokenType::OP_MULTIPLY },
+    { "/", TokenType::OP_DIVIDE },
+    { ">", TokenType::OP_GREATER_THAN },
+    { "<", TokenType::OP_LESS_THAN },
+    { "=", TokenType::OP_ASSIGN },
+    { ">=", TokenType::OP_GREATER_THAN_EQUAL },
+    { "<=", TokenType::OP_LESS_THAN_EQUAL },
+    { "==", TokenType::OP_EQUALS },
 };
 
 Lexer::Lexer(const std::string &sourceStr) :
@@ -36,6 +52,28 @@ void Lexer::Advance()
         m_currentChar = GetNext();
     }
 
+    // Advance through comments
+    if(m_currentChar == '/')
+    {
+        m_currentChar = GetNext();
+        if(m_currentChar == '/')
+        {
+            do
+            {
+                m_currentChar = GetNext();
+                // Might run off the end of the file while parsing comments
+                if(m_currentChar == '\0')
+                {
+                    m_current->Type = TokenType::END;
+                    return;
+                }
+            } while (m_currentChar != '\n');
+
+            m_current->Type = TokenType::COMMENT;
+            return;
+        }
+    }
+
     auto paren = parenMap.find(m_currentChar);
     if(paren != parenMap.end())
     {
@@ -44,13 +82,54 @@ void Lexer::Advance()
         return;
     }
 
-    if(std::isalnum(m_currentChar))
+    if (m_currentChar == ';')
+    {
+        m_current->Type = TokenType::SEMI;
+        m_currentChar = GetNext();
+        return;
+    }
+
+    if(std::isdigit(m_currentChar))
+    {
+        // Parse ints for now
+        do
+        {
+            m_currentNumber += m_currentChar;
+            m_currentChar = GetNext();
+        } while (std::isdigit(m_currentChar));
+
+        int number = std::stoi(m_currentNumber);
+        m_current->Type = TokenType::NUMBER;
+        m_current->iValue = number;
+        return;
+    }
+
+    std::string op(1, m_currentChar);
+    auto opIter = operatorMap.find(op);
+    if(opIter != operatorMap.end())
+    {
+        m_current->Type = opIter->second;
+
+        // it's possible our op is part of a 2-char op (like GTE)
+        m_currentChar = GetNext();
+        op += m_currentChar;
+        opIter = operatorMap.find(op);
+        if(opIter != operatorMap.end())
+        {
+            m_current->Type = opIter->second;
+            m_currentChar = GetNext();
+        }
+
+        return;
+    }
+
+    if(std::isalpha(m_currentChar))
     {
         do
         {
             m_currentIdentifier += m_currentChar;
             m_currentChar = GetNext();
-        } while (std::isalnum(m_currentChar));
+        } while (std::isalnum(m_currentChar) || m_currentChar == '_');
 
         auto keyword = keywordMap.find(m_currentIdentifier);
         if(keyword != keywordMap.end())
@@ -62,16 +141,23 @@ void Lexer::Advance()
             m_current->Type = TokenType::IDENT;
         }
 
+        m_currentIdentifier.clear();
         return;
     }
 
     if(m_currentChar == '\0')
     {
         m_current->Type = TokenType::END;
+        return;
     }
 }
 
 char Lexer::GetNext()
 {
     return m_source[++m_index];
+}
+
+char Lexer::PeekNext()
+{
+    return m_source[m_index + 1];
 }

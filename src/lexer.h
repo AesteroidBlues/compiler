@@ -11,6 +11,8 @@ class Lexer
 
     private:
       char GetNext();
+      char PeekNext();
+      
       std::string m_source;
       std::shared_ptr<Token> m_current;
 

@@ -5,13 +5,14 @@ enum TokenType
     // Errors
     LEXERR_UNKNOWN_SYMBOL = -1,
 
-    IDENT  = 1,
-    BOOL   = 2,
-    NUMBER = 3,
-    SEMI   = 4,
-    ATOM   = 5,
-    COMMA  = 6,
-    COLON  = 7,
+    IDENT   = 1,
+    BOOL    = 2,
+    NUMBER  = 3,
+    SEMI    = 4,
+    ATOM    = 5,
+    COMMA   = 6,
+    COLON   = 7,
+    COMMENT = 8,
 
     LPAREN = 10,
     RPAREN = 11,
