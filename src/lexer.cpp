@@ -18,26 +18,46 @@ std::unordered_map<std::string, TokenType> keywordMap =
     { "function", TokenType::K_FUNCTION },
     { "var", TokenType::K_VAR },
     { "for", TokenType::K_FOR },
+    { "if", TokenType::K_IF },
+    { "while", TokenType::K_WHILE },
     { "return", TokenType::K_RETURN },
 };
 
 std::unordered_map<std::string, TokenType> operatorMap =
 {
+    { "/", TokenType::OP_DIVIDE },
+    { "*", TokenType::OP_MULTIPLY },
     { "+", TokenType::OP_ADD },
     { "-", TokenType::OP_SUBTRACT },
-    { "*", TokenType::OP_MULTIPLY },
-    { "/", TokenType::OP_DIVIDE },
+    { "%%", TokenType::OP_MODULO },
     { ">", TokenType::OP_GREATER_THAN },
-    { "<", TokenType::OP_LESS_THAN },
-    { "=", TokenType::OP_ASSIGN },
     { ">=", TokenType::OP_GREATER_THAN_EQUAL },
+    { "<", TokenType::OP_LESS_THAN },
     { "<=", TokenType::OP_LESS_THAN_EQUAL },
     { "==", TokenType::OP_EQUALS },
+    { "!=", TokenType::OP_NOT_EQUALS },
+    { "!", TokenType::OP_NOT },
+    { "=", TokenType::OP_ASSIGN },
+    { "#", TokenType::OP_CONCAT },
+    { "*=", TokenType::OP_MUL_ASSIGN },
+    { "/=", TokenType::OP_DIV_ASSIGN },
+    { "-=", TokenType::OP_SUB_ASSIGN },
+    { "+=", TokenType::OP_ADD_ASSIGN },
+    { "#=", TokenType::OP_CONCAT_ASSIGN },
+    { "++", TokenType::OP_INCREMENT },
+    { "--", TokenType::OP_DECREMENT },
+    { "&&", TokenType::OP_AND },
+    { "||", TokenType::OP_OR },
+    // Makes parsing logic simpler
+    { "|", TokenType::LEXERR_UNKNOWN_SYMBOL },
+    { "&", TokenType::LEXERR_UNKNOWN_SYMBOL },
 };
 
 Lexer::Lexer(const std::string &sourceStr) :
     m_source(sourceStr),
-    m_index(0)
+    m_index(0),
+    m_lineColumn(0),
+    m_lineNumber(0)
 {
     m_current = std::make_shared<Token>();
     m_currentChar = sourceStr[0];
@@ -49,10 +69,16 @@ void Lexer::Advance()
     // Advance past white space
     while(std::isspace(m_currentChar))
     {
+        if(m_currentChar == '\n')
+        {
+            m_lineNumber++;
+            m_lineColumn = 0;
+        }
+        
         m_currentChar = GetNext();
     }
 
-    // Advance through comments
+    // COMMENTS
     if(m_currentChar == '/')
     {
         m_currentChar = GetNext();
@@ -74,6 +100,7 @@ void Lexer::Advance()
         }
     }
 
+    // PARENS
     auto paren = parenMap.find(m_currentChar);
     if(paren != parenMap.end())
     {
@@ -82,6 +109,7 @@ void Lexer::Advance()
         return;
     }
 
+    // SEMICOLONS
     if (m_currentChar == ';')
     {
         m_current->Type = TokenType::SEMI;
@@ -89,6 +117,7 @@ void Lexer::Advance()
         return;
     }
 
+    // NUMBERS
     if(std::isdigit(m_currentChar))
     {
         // Parse ints for now
@@ -120,16 +149,30 @@ void Lexer::Advance()
             m_currentChar = GetNext();
         }
 
+        m_current->Line = m_lineNumber;
+        m_current->Column = m_lineColumn;
+
         return;
     }
 
-    if(std::isalpha(m_currentChar))
+    if(m_currentChar == '@')
     {
-        do
+        m_currentChar = GetNext();
+        if(std::isalpha(m_currentChar) || m_currentChar == '_')
         {
-            m_currentIdentifier += m_currentChar;
-            m_currentChar = GetNext();
-        } while (std::isalnum(m_currentChar) || m_currentChar == '_');
+            m_currentIdentifier = GetIdentifier();
+            m_current->Type = TokenType::ATOM;
+            
+            // TODO: How do we pass up strings?
+        }
+
+        m_currentIdentifier.clear();
+        return;
+    }
+
+    if(std::isalpha(m_currentChar) || m_currentChar == '_')
+    {
+        m_currentIdentifier = GetIdentifier();
 
         auto keyword = keywordMap.find(m_currentIdentifier);
         if(keyword != keywordMap.end())
@@ -152,8 +195,21 @@ void Lexer::Advance()
     }
 }
 
+std::string Lexer::GetIdentifier()
+{
+    std::string s;
+    do
+    {
+        s += m_currentChar;
+        m_currentChar = GetNext();
+    } while (std::isalnum(m_currentChar) || m_currentChar == '_');
+
+    return s;
+}
+
 char Lexer::GetNext()
 {
+    m_lineColumn++;
     return m_source[++m_index];
 }
 
