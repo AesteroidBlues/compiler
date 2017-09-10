@@ -9,7 +9,8 @@
             "type": "shell",
             "args": [
                 "compiler"
-            ]
+            ],
+            "problemMatcher": []
         },
         {
             "taskName": "run",

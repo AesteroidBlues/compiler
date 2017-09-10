@@ -1,10 +1,8 @@
-// compiler.cpp : Defines the entry point for the console application.
-//
-
-#include "lexer.h"
 #include <iostream>
+#include <array>
+#include "src/lexer.h"
 
-std::string test =
+std::string smokeTest =
 "                   \n\
 // Comment          \n\
 function foo(bar) { \n\
@@ -12,7 +10,7 @@ function foo(bar) { \n\
 }                   \n\
 ";
 
-TokenType testArr[] =
+TokenType smokeTestTokens[] =
 {
     TokenType::COMMENT,
     TokenType::K_FUNCTION,
@@ -40,32 +38,36 @@ void HandleError(std::shared_ptr<Token> token)
     std::cout << std::endl;
 }
 
-int main()
+bool TestLexer(std::string name, std::string code, TokenType tokens[], int size)
 {
-    std::cout << "Starting" << std::endl;
+    std::cout << name << " - ";
 
-    auto lexer = Lexer(test);
+    auto lexer = Lexer(code);
     auto current = lexer.Current();
     
     int i = 0;
-    while (current->Type != TokenType::END)
+    while (i < size)
     {
         if (((int)current->Type) < 0)
         {
             HandleError(current);
-            return -1;
+            return ;
         }
 
-        if (current->Type != testArr[i])
+        if (current->Type != tokens[i])
         {
-            std::cout << "FAIL: " << current->Type << " != " << testArr[i] << std::endl;
+            std::cout << "FAIL: " << current->Type << " != " << tokens[i] << std::endl;
             return -1;
         }
         lexer.Advance();
         i++;
     }
 
-    std::cout << "SUCCESS!" << std::endl;
+    std::cout << "PASS" << std::endl;
     return 0;
 }
 
+int main()
+{
+    
+}

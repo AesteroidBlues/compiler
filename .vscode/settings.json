@@ -15,6 +15,7 @@
         "cwctype": "cpp",
         "memory": "cpp",
         "utility": "cpp",
-        "iterator": "cpp"
+        "iterator": "cpp",
+        "unordered_map": "cpp"
     }
 }

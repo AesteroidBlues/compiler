@@ -5,7 +5,7 @@ LDLIBS=
 
 SRCDIR=src/
 BINDIR=bin/
-SRCS=src/compiler.cpp src/lexer.cpp
+SRCS=src/compiler.cpp src/lexer.cpp src/ast_node.cpp src/parser.cpp
 
 all: compiler
 

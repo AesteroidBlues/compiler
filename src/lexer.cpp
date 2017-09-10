@@ -59,17 +59,19 @@ Lexer::Lexer(const std::string &sourceStr) :
     m_lineColumn(0),
     m_lineNumber(0)
 {
-    m_current = std::make_shared<Token>();
     m_currentChar = sourceStr[0];
     Advance(); // Get the first token ready to go
 }
 
 void Lexer::Advance() 
 {
+    // Make a new token
+    m_current = std::make_shared<Token>();
+
     // Advance past white space
     while(std::isspace(m_currentChar))
     {
-        if(m_currentChar == '\n')
+        if (m_currentChar == '\n')
         {
             m_lineNumber++;
             m_lineColumn = 0;
@@ -79,16 +81,16 @@ void Lexer::Advance()
     }
 
     // COMMENTS
-    if(m_currentChar == '/')
+    if (m_currentChar == '/')
     {
         m_currentChar = GetNext();
-        if(m_currentChar == '/')
+        if (m_currentChar == '/')
         {
             do
             {
                 m_currentChar = GetNext();
                 // Might run off the end of the file while parsing comments
-                if(m_currentChar == '\0')
+                if (m_currentChar == '\0')
                 {
                     m_current->Type = TokenType::END;
                     return;
@@ -102,7 +104,7 @@ void Lexer::Advance()
 
     // PARENS
     auto paren = parenMap.find(m_currentChar);
-    if(paren != parenMap.end())
+    if (paren != parenMap.end())
     {
         m_current->Type = paren->second;
         m_currentChar = GetNext();
@@ -118,7 +120,7 @@ void Lexer::Advance()
     }
 
     // NUMBERS
-    if(std::isdigit(m_currentChar))
+    if (std::isdigit(m_currentChar))
     {
         // Parse ints for now
         do
@@ -135,7 +137,7 @@ void Lexer::Advance()
 
     std::string op(1, m_currentChar);
     auto opIter = operatorMap.find(op);
-    if(opIter != operatorMap.end())
+    if (opIter != operatorMap.end())
     {
         m_current->Type = opIter->second;
 
@@ -143,7 +145,7 @@ void Lexer::Advance()
         m_currentChar = GetNext();
         op += m_currentChar;
         opIter = operatorMap.find(op);
-        if(opIter != operatorMap.end())
+        if (opIter != operatorMap.end())
         {
             m_current->Type = opIter->second;
             m_currentChar = GetNext();
@@ -155,40 +157,40 @@ void Lexer::Advance()
         return;
     }
 
-    if(m_currentChar == '@')
+    if (m_currentChar == '@')
     {
         m_currentChar = GetNext();
-        if(std::isalpha(m_currentChar) || m_currentChar == '_')
+        if (std::isalpha(m_currentChar) || m_currentChar == '_')
         {
             m_currentIdentifier = GetIdentifier();
             m_current->Type = TokenType::ATOM;
-            
-            // TODO: How do we pass up strings?
+            m_current->Identifier = m_currentIdentifier;
         }
 
         m_currentIdentifier.clear();
         return;
     }
 
-    if(std::isalpha(m_currentChar) || m_currentChar == '_')
+    if (std::isalpha(m_currentChar) || m_currentChar == '_')
     {
         m_currentIdentifier = GetIdentifier();
 
         auto keyword = keywordMap.find(m_currentIdentifier);
-        if(keyword != keywordMap.end())
+        if (keyword != keywordMap.end())
         {
             m_current->Type = keyword->second;
         } 
         else 
         {
             m_current->Type = TokenType::IDENT;
+            m_current->Identifier = m_currentIdentifier;
         }
 
         m_currentIdentifier.clear();
         return;
     }
 
-    if(m_currentChar == '\0')
+    if (m_currentChar == '\0')
     {
         m_current->Type = TokenType::END;
         return;
