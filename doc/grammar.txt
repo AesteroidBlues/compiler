@@ -30,7 +30,7 @@ block = "{", { statement }, "}";
 
 while_loop = "while", "(", expression, ")", statement;
 for_loop = "for", "(", expression, ";", expression, ";", expression, ")", statement;
-if = "if", "(", expression, ")", statement, { "elif", "(", expression, ")", statement }, [ "else", statement ];
+if = "if", "(", expression, ")", block, { "elif", "(", expression, ")", block }, [ "else", block ];
 var_decl = "var", ident, "=", expression;
 return = "return", [ expression ], ";";
 

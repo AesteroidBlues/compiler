@@ -7,8 +7,10 @@
 class Parser
 {
   public:
+    Parser();
     void Consume(std::shared_ptr<Lexer> lexer);
     void Finalize();
+    std::shared_ptr<ASTNode> GetAST() { return m_programRoot; }
 
   private:
     bool Accept(TokenType t);

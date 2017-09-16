@@ -68,17 +68,7 @@ void Lexer::Advance()
     // Make a new token
     m_current = std::make_shared<Token>();
 
-    // Advance past white space
-    while(std::isspace(m_currentChar))
-    {
-        if (m_currentChar == '\n')
-        {
-            m_lineNumber++;
-            m_lineColumn = 0;
-        }
-        
-        m_currentChar = GetNext();
-    }
+    SkipWhitespace();
 
     // COMMENTS
     if (m_currentChar == '/')
@@ -96,11 +86,10 @@ void Lexer::Advance()
                     return;
                 }
             } while (m_currentChar != '\n');
-
-            m_current->Type = TokenType::COMMENT;
-            return;
         }
     }
+
+    SkipWhitespace();
 
     // PARENS
     auto paren = parenMap.find(m_currentChar);
@@ -218,4 +207,19 @@ char Lexer::GetNext()
 char Lexer::PeekNext()
 {
     return m_source[m_index + 1];
+}
+
+void Lexer::SkipWhitespace()
+{
+    // Advance past white space
+    while(std::isspace(m_currentChar))
+    {
+        if (m_currentChar == '\n')
+        {
+            m_lineNumber++;
+            m_lineColumn = 0;
+        }
+        
+        m_currentChar = GetNext();
+    }
 }

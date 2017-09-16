@@ -1,5 +1,11 @@
+#include <iostream>
 #include "parser.h"
 
+Parser::Parser()
+{
+    m_programRoot = std::make_shared<ASTNode>();
+    m_currentNode = m_programRoot;
+}
 
 void Parser::Consume(std::shared_ptr<Lexer> lex)
 {
@@ -12,7 +18,14 @@ void Parser::Finalize()
     while(ParseFunc(false))
     {
         m_lexers.pop_back();
-        m_currentLexer = m_lexers.back();
+        if(m_lexers.size() > 0)
+        {
+            m_currentLexer = m_lexers.back();
+        }
+        else 
+        {
+            return;
+        }
     }
 }
 
@@ -23,7 +36,6 @@ bool Parser::Accept(TokenType t)
         auto newNode = std::make_shared<ASTNode>(m_currentLexer->Current());
         m_currentNode->AddChild(newNode);
         m_currentNode = newNode;
-
         m_currentLexer->Advance();
         return true;
     }
@@ -37,6 +49,7 @@ bool Parser::Expect(TokenType t)
     if (m_currentLexer->Current()->Type != t)
     {
         // Throw parse exception
+        throw;
         return false;
     }
 
@@ -46,8 +59,12 @@ bool Parser::Expect(TokenType t)
 
 bool Parser::ParseFunc(bool expect)
 {
-    if(Accept(TokenType::K_FUNCTION))
+    if (Accept(TokenType::K_FUNCTION))
     {
+        auto identNode = std::make_shared<ASTNode>(m_currentLexer->Current());
+        m_currentNode->AddChild(identNode);
+        m_currentLexer->Advance();
+        
         Expect(TokenType::LPAREN);
         while (m_currentLexer->Current()->Type != TokenType::RPAREN)
         {
@@ -55,15 +72,9 @@ bool Parser::ParseFunc(bool expect)
             m_currentNode->AddChild(paramNode);
             m_currentLexer->Advance();
         }
+        Expect(TokenType::RPAREN);
 
-        // Open a scope on the LBrace
-        Accept(TokenType::LBRACE);
-        
-        while (m_currentLexer->Current()->Type != TokenType::END)
-        {
-            ParseStatement(false);
-        }
-
+        ParseBlock(true);
         return true;
     }
 
@@ -250,7 +261,6 @@ bool Parser::ParseExPostfix(bool expect)
 {
     if (ParseTerm(false))
     {
-
         return true;
     }
 
@@ -284,22 +294,16 @@ bool Parser::ParseTerm(bool expect)
 bool Parser::ParseConstant(bool expect)
 {
     auto tokenType = m_currentLexer->Current()->Type;
-    if(ParseList(false) ||
+    if (ParseList(false) ||
        ParseMap(false))
     {
         return true;
     }
-    else if (tokenType == TokenType::NUMBER)
+    else if (Accept(TokenType::NUMBER) ||
+             Accept(TokenType::BOOL) ||
+             Accept(TokenType::TERMINAL))
     {
         return true;
-    }
-    else if (tokenType == TokenType::BOOL)
-    {
-
-    }
-    else if (tokenType == TokenType::TERMINAL)
-    {
-        
     }
 
     return false;
@@ -321,7 +325,7 @@ bool Parser::ParseParens(bool expect)
 
 bool Parser::ParseReturn(bool expect)
 {
-    if(Accept(TokenType::K_RETURN))
+    if (Accept(TokenType::K_RETURN))
     {
         if(ParseExpression(true))
         {
@@ -351,6 +355,18 @@ bool Parser::ParseVarDecl(bool expect)
 
 bool Parser::ParseBlock(bool expect)
 {
+    // Open a scope on the LBRACE
+    if(Accept(TokenType::LBRACE))
+    {
+        while(m_currentLexer->Current()->Type != TokenType::END
+            && m_currentLexer->Current()->Type != TokenType::RBRACE)
+        {
+            ParseStatement(false);
+        }
+
+        Expect(TokenType::RBRACE);
+        return true;
+    }
     return false;
 }
 
@@ -361,6 +377,8 @@ bool Parser::ParseIf(bool expect)
         Expect(TokenType::LPAREN);
         if(ParseExpression(true))
         {
+            Expect(TokenType::RPAREN);
+            ParseStatement(true);
             return true;
         }
     }

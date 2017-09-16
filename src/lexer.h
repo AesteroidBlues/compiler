@@ -12,6 +12,7 @@ class Lexer
     private:
       char GetNext();
       char PeekNext();
+      void SkipWhitespace();
 
       std::string GetIdentifier();
 

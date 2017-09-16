@@ -1,8 +1,10 @@
 // compiler.cpp : Defines the entry point for the console application.
 //
 
-#include "lexer.h"
 #include <iostream>
+
+#include "lexer.h"
+#include "parser.h"
 
 std::string test =
 "                   \n\
@@ -14,7 +16,6 @@ function foo(bar) { \n\
 
 TokenType testArr[] =
 {
-    TokenType::COMMENT,
     TokenType::K_FUNCTION,
     TokenType::IDENT,
     TokenType::LPAREN,
@@ -44,28 +45,16 @@ int main()
 {
     std::cout << "Starting" << std::endl;
 
-    auto lexer = Lexer(test);
-    auto current = lexer.Current();
-    
-    int i = 0;
-    while (current->Type != TokenType::END)
-    {
-        if (((int)current->Type) < 0)
-        {
-            HandleError(current);
-            return -1;
-        }
+    auto lexer = std::make_shared<Lexer>(test);
+    auto parser = Parser();
+    parser.Consume(lexer);
+    parser.Finalize();
+    std::cout << "Parsing" << std::endl;
 
-        if (current->Type != testArr[i])
-        {
-            std::cout << "FAIL: " << current->Type << " != " << testArr[i] << std::endl;
-            return -1;
-        }
-        lexer.Advance();
-        i++;
-    }
+    auto ast = parser.GetAST();
+    ASTNode::PrintAST(ast);
 
-    std::cout << "SUCCESS!" << std::endl;
+    std::cout << "Done" << std::endl;
     return 0;
 }
 

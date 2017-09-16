@@ -56,6 +56,7 @@ enum TokenType
     K_IN,
     K_RETURN,
 
+    PROGRAM_START,
     END,
 };
 
